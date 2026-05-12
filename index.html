@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Transform">
+<meta name="theme-color" content="#0D0D0F">
+<title>Transformation Tracker</title>
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxODAgMTgwIj48cmVjdCB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgcng9IjQwIiBmaWxsPSIjMEQwRDBGIi8+PHRleHQgeD0iOTAiIHk9IjExNSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjgwIiBmb250LXdlaWdodD0iOTAwIiBmaWxsPSIjRTg1RDA0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5HMzwvdGV4dD48L3N2Zz4=">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0D0D0F;
+  --card: rgba(255,255,255,0.03);
+  --border: rgba(255,255,255,0.06);
+  --text: #E8E6E1;
+  --text2: rgba(255,255,255,0.4);
+  --text3: rgba(255,255,255,0.3);
+  --text4: rgba(255,255,255,0.15);
+  --p1: #E85D04;
+  --p2: #2E86AB;
+  --p3: #1B7A3D;
+  --gold: #D4A843;
+  --font: 'Outfit', -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { 
+  font-family: var(--font); background: var(--bg); color: var(--text); 
+  min-height: 100vh; max-width: 480px; margin: 0 auto; 
+  padding-bottom: calc(80px + var(--safe-b));
+  overscroll-behavior: none;
+}
+input, textarea, select { font-family: var(--font); }
+input:focus, textarea:focus { outline: none; border-color: rgba(255,255,255,0.2) !important; }
+
+/* ── Nav ── */
+.nav { 
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 480px; display: flex;
+  background: rgba(13,13,15,0.96); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border); z-index: 100;
+  padding-bottom: var(--safe-b);
+}
+.nav-btn { 
+  flex: 1; padding: 11px 0 9px; border: none; background: none;
+  color: var(--text3); font-size: 10px; font-weight: 600; letter-spacing: 0.05em;
+  cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  font-family: var(--font); transition: color 0.2s;
+}
+.nav-btn.active { color: var(--p1); }
+.nav-btn .icon { font-size: 20px; line-height: 1; }
+.nav-dot { width: 4px; height: 4px; border-radius: 50%; background: transparent; transition: background 0.2s; }
+.nav-btn.active .nav-dot { background: var(--p1); }
+
+/* ── Cards ── */
+.card { 
+  background: var(--card); border-radius: 16px; border: 1px solid var(--border);
+  margin: 16px 20px 0; padding: 20px; overflow: hidden;
+}
+.card-title { 
+  font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text2); margin: 0 0 14px;
+}
+
+/* ── Stats ── */
+.stat-row { display: flex; gap: 10px; margin: 14px 20px 0; }
+.stat { 
+  flex: 1; background: var(--card); border-radius: 14px; border: 1px solid var(--border);
+  padding: 14px 12px; position: relative; overflow: hidden;
+}
+.stat-glow { 
+  position: absolute; top: -20px; right: -20px; width: 60px; height: 60px;
+  border-radius: 50%; opacity: 0.07; filter: blur(20px);
+}
+.stat-val { font-size: 24px; font-weight: 800; color: #fff; font-family: var(--mono); }
+.stat-label { font-size: 9px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text3); margin-top: 3px; }
+
+/* ── Toggles ── */
+.toggle { 
+  width: 44px; height: 26px; border-radius: 13px; border: none;
+  background: rgba(255,255,255,0.1); cursor: pointer; position: relative;
+  transition: background 0.2s; flex-shrink: 0;
+}
+.toggle.on { background: var(--p1); }
+.toggle-dot { 
+  position: absolute; top: 3px; left: 3px; width: 20px; height: 20px;
+  border-radius: 50%; background: #fff; transition: left 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.toggle.on .toggle-dot { left: 21px; }
+
+/* ── Check Rows ── */
+.check-row { 
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 11px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.check-row:last-child { border-bottom: none; }
+.check-label { font-size: 14px; font-weight: 500; }
+.check-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+/* ── Inputs ── */
+.input { 
+  width: 100%; padding: 12px 14px; border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04);
+  color: #fff; font-size: 15px;
+}
+.input-sm { 
+  width: 80px; padding: 8px 10px; border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04);
+  color: #fff; font-size: 15px; font-family: var(--mono); text-align: center;
+}
+textarea.input { min-height: 70px; resize: vertical; }
+
+/* ── Milestone ── */
+.milestone-card { 
+  border-radius: 14px; padding: 16px 18px; margin: 16px 20px 0;
+}
+.milestone-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+.milestone-name { font-size: 16px; font-weight: 700; color: #fff; margin: 4px 0 2px; }
+.milestone-desc { font-size: 12px; color: rgba(255,255,255,0.5); }
+
+/* ── Streak Badge ── */
+.streak { 
+  display: inline-flex; align-items: center; gap: 6px;
+  border-radius: 20px; padding: 6px 14px; font-size: 13px; font-weight: 600;
+}
+
+/* ── Books ── */
+.book-card { 
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 14px; border-radius: 10px; margin-bottom: 8px; cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.02);
+  transition: background 0.15s;
+}
+.book-card.done { background: rgba(27,122,61,0.1); border-color: rgba(27,122,61,0.2); }
+.book-title { font-size: 14px; font-weight: 600; }
+.book-author { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.book-week { font-size: 10px; font-weight: 600; color: var(--text3); font-family: var(--mono); }
+.book-check { 
+  width: 22px; height: 22px; border-radius: 6px; display: flex;
+  align-items: center; justify-content: center; font-size: 12px; color: #fff; flex-shrink: 0;
+  border: 2px solid rgba(255,255,255,0.15); background: transparent;
+}
+.book-card.done .book-check { border-color: var(--p3); background: var(--p3); }
+
+/* ── Date Nav ── */
+.date-nav { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; background: rgba(255,255,255,0.02); }
+.date-btn { 
+  background: none; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;
+  color: #fff; padding: 6px 12px; cursor: pointer; font-size: 13px; font-family: var(--font);
+}
+.date-label { font-size: 15px; font-weight: 600; color: #fff; }
+
+/* ── Timeline ── */
+.tl-item { display: flex; gap: 14px; }
+.tl-line { display: flex; flex-direction: column; align-items: center; width: 20px; flex-shrink: 0; }
+.tl-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; border: 2px solid transparent; }
+.tl-dot.past { background: var(--p3); }
+.tl-dot.next { background: var(--p1); border-color: var(--p1); }
+.tl-dot.future { background: rgba(255,255,255,0.1); }
+.tl-bar { width: 2px; flex: 1; min-height: 30px; }
+.tl-bar.past { background: rgba(27,122,61,0.3); }
+.tl-bar.future { background: rgba(255,255,255,0.06); }
+.tl-content { padding-bottom: 20px; }
+.tl-date { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; color: var(--text3); font-family: var(--mono); }
+.tl-name { font-size: 15px; font-weight: 700; color: #fff; margin-top: 2px; }
+.tl-name.next { color: var(--p1); }
+.tl-name.past { opacity: 0.5; }
+.tl-desc { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+/* ── Progress Bar ── */
+.progress-track { margin: 16px 20px 0; height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s; }
+
+/* ── Chart placeholder (simple canvas) ── */
+.chart-area { width: 100%; position: relative; }
+
+/* ── Sections ── */
+.section-head { padding: 20px 20px 0; }
+.section-phase { font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; margin: 0; }
+.section-title { font-size: 22px; font-weight: 800; color: #fff; margin: 4px 0 0; }
+.section-meta { font-size: 12px; color: var(--text2); margin-top: 4px; font-family: var(--mono); }
+
+/* ── Macro Row ── */
+.macro-row { display: flex; gap: 8px; margin-bottom: 12px; }
+.macro-col { flex: 1; text-align: center; }
+.macro-label { font-size: 10px; color: var(--text3); font-weight: 600; letter-spacing: 0.05em; margin-bottom: 4px; }
+
+/* ── Page transitions ── */
+.page { display: none; }
+.page.active { display: block; animation: fadeIn 0.15s ease; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* ── Reset link ── */
+.reset-link { 
+  display: block; text-align: center; padding: 20px; font-size: 12px; 
+  color: rgba(255,255,255,0.2); cursor: pointer; text-decoration: underline;
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════ PAGES ═══════ -->
+<div id="page-dashboard" class="page active"></div>
+<div id="page-daily" class="page"></div>
+<div id="page-weekly" class="page"></div>
+<div id="page-books" class="page"></div>
+<div id="page-milestones" class="page"></div>
+
+<!-- ═══════ BOTTOM NAV ═══════ -->
+<div class="nav">
+  <button class="nav-btn active" data-tab="dashboard" onclick="switchTab('dashboard')">
+    <span class="icon">◉</span><span>HOME</span><div class="nav-dot"></div>
+  </button>
+  <button class="nav-btn" data-tab="daily" onclick="switchTab('daily')">
+    <span class="icon">✎</span><span>DAILY</span><div class="nav-dot"></div>
+  </button>
+  <button class="nav-btn" data-tab="weekly" onclick="switchTab('weekly')">
+    <span class="icon">▦</span><span>WEEKLY</span><div class="nav-dot"></div>
+  </button>
+  <button class="nav-btn" data-tab="books" onclick="switchTab('books')">
+    <span class="icon">◈</span><span>BOOKS</span><div class="nav-dot"></div>
+  </button>
+  <button class="nav-btn" data-tab="milestones" onclick="switchTab('milestones')">
+    <span class="icon">⚑</span><span>GOALS</span><div class="nav-dot"></div>
+  </button>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// DATA LAYER
+// ══════════════════════════════════════════
+const STORE_KEY = "g3-transform-v4";
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    return raw ? JSON.parse(raw) : { dailyLogs: {}, weeklyLogs: {}, books: {} };
+  } catch(e) { return { dailyLogs: {}, weeklyLogs: {}, books: {} }; }
+}
+
+function saveData() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(DATA)); } catch(e) {}
+}
+
+let DATA = loadData();
+
+// ══════════════════════════════════════════
+// DATE HELPERS
+// ══════════════════════════════════════════
+function todayStr() { return new Date().toISOString().split("T")[0]; }
+function dayNum(ds) { return Math.floor((new Date(ds) - new Date("2026-05-13")) / 86400000) + 1; }
+function weekNum(ds) { return Math.ceil(dayNum(ds) / 7); }
+function phaseName(ds) { const d = dayNum(ds); return d <= 61 ? "IGNITION" : d <= 122 ? "ACCELERATION" : "DOMINATION"; }
+function phaseColor(ds) { const d = dayNum(ds); return d <= 61 ? "var(--p1)" : d <= 122 ? "var(--p2)" : "var(--p3)"; }
+function phaseHex(ds) { const d = dayNum(ds); return d <= 61 ? "#E85D04" : d <= 122 ? "#2E86AB" : "#1B7A3D"; }
+function fmtDate(ds) { return new Date(ds + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }); }
+function fmtDateLong(ds) { return new Date(ds + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" }); }
+
+let selectedDate = todayStr();
+
+// ══════════════════════════════════════════
+// CONSTANTS
+// ══════════════════════════════════════════
+const MILESTONES = [
+  { date:"2026-05-13", label:"DAY 1", desc:"Bloodwork, photos, measurements" },
+  { date:"2026-05-20", label:"Week 1", desc:"First weigh-in" },
+  { date:"2026-05-27", label:"Week 2", desc:"Target: 219 lbs" },
+  { date:"2026-06-10", label:"Month 1", desc:"Target: 216 lbs" },
+  { date:"2026-06-12", label:"PHASE 1 MID", desc:"Full measurements" },
+  { date:"2026-06-29", label:"Week 7", desc:"Book 2 complete" },
+  { date:"2026-07-06", label:"Week 8", desc:"Strength retest" },
+  { date:"2026-07-13", label:"PHASE 1 END", desc:"Target: 210 lbs" },
+  { date:"2026-08-12", label:"PHASE 2 MID", desc:"Target: 204 lbs" },
+  { date:"2026-09-12", label:"PHASE 2 END", desc:"Target: 198 lbs" },
+  { date:"2026-10-12", label:"PHASE 3 MID", desc:"Target: 194 lbs" },
+  { date:"2026-11-10", label:"DAY 180", desc:"TRANSFORMATION COMPLETE" },
+];
+
+const BOOKS = [
+  { title:"Atomic Habits", author:"James Clear", phase:1, weeks:"1–2" },
+  { title:"10x Is Easier Than 2x", author:"Dan Sullivan", phase:1, weeks:"3–4" },
+  { title:"Can't Hurt Me", author:"David Goggins", phase:1, weeks:"5–6" },
+  { title:"The E-Myth Revisited", author:"Michael Gerber", phase:1, weeks:"7–8" },
+  { title:"Buy Back Your Time", author:"Dan Martell", phase:2, weeks:"9–10" },
+  { title:"Consistency Selling", author:"Weldon Long", phase:2, weeks:"11–12" },
+  { title:"Extreme Ownership", author:"Jocko Willink", phase:2, weeks:"13–14" },
+  { title:"Traction", author:"Gino Wickman", phase:2, weeks:"15–16" },
+  { title:"The Hard Thing About Hard Things", author:"Ben Horowitz", phase:3, weeks:"17–18" },
+  { title:"Never Split the Difference", author:"Chris Voss", phase:3, weeks:"19–20" },
+  { title:"Unreasonable Hospitality", author:"Will Guidara", phase:3, weeks:"21–22" },
+  { title:"Who Not How", author:"Dan Sullivan", phase:3, weeks:"23–24" },
+];
+
+const NONNEG = [
+  { key:"sleep", label:"7+ Hours Sleep", sub:"In bed by 10 PM" },
+  { key:"water", label:"1 Gallon Water", sub:"Finished before dinner" },
+  { key:"protein", label:"200g+ Protein", sub:"Log in MyFitnessPal" },
+  { key:"noAlc", label:"Zero Alcohol", sub:"No exceptions" },
+  { key:"workout", label:"Workout Complete", sub:"Followed the plan" },
+  { key:"meals", label:"All Meals Logged", sub:"MyFitnessPal 100%" },
+];
+
+// ══════════════════════════════════════════
+// COMPUTED VALUES
+// ══════════════════════════════════════════
+function getStreak() {
+  let s = 0, d = new Date(todayStr());
+  while(true) {
+    const ds = d.toISOString().split("T")[0];
+    if (DATA.dailyLogs[ds] && DATA.dailyLogs[ds].logged) { s++; d.setDate(d.getDate()-1); }
+    else break;
+  }
+  return s;
+}
+
+function getLatestWeight() {
+  const entries = Object.entries(DATA.dailyLogs).filter(([_,v]) => v.weight).sort(([a],[b]) => b.localeCompare(a));
+  return entries.length > 0 ? entries[0][1].weight : 221;
+}
+
+function getWeightData() {
+  return Object.entries(DATA.dailyLogs)
+    .filter(([_,v]) => v.weight)
+    .sort(([a],[b]) => a.localeCompare(b))
+    .map(([d,v]) => ({ date: d, weight: v.weight }));
+}
+
+function getWorkoutsThisWeek() {
+  let count = 0;
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const ds = d.toISOString().split("T")[0];
+    if (DATA.dailyLogs[ds]?.workout) count++;
+  }
+  return count;
+}
+
+function getBooksRead() {
+  return Object.values(DATA.books || {}).filter(v => v).length;
+}
+
+function getComplianceData() {
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const ds = d.toISOString().split("T")[0];
+    const log = DATA.dailyLogs[ds] || {};
+    let score = 0;
+    if (log.sleep) score++; if (log.water) score++; if (log.protein) score++;
+    if (log.noAlc) score++; if (log.workout) score++; if (log.meals) score++;
+    days.push({ date: ds.slice(5), score, day: ds.slice(8) });
+  }
+  return days;
+}
+
+function getNextMilestone() {
+  const t = todayStr();
+  return MILESTONES.find(m => m.date >= t) || MILESTONES[MILESTONES.length - 1];
+}
+
+// ══════════════════════════════════════════
+// SIMPLE CHART RENDERER (Canvas)
+// ══════════════════════════════════════════
+function drawWeightChart(canvasId) {
+  const data = getWeightData();
+  if (data.length < 2) return;
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width = canvas.offsetWidth * 2;
+  const H = canvas.height = 300;
+  ctx.scale(1, 1);
+  ctx.clearRect(0, 0, W, H);
+  
+  const weights = data.map(d => d.weight);
+  const minW = Math.min(...weights, 188) - 2;
+  const maxW = Math.max(...weights, 222) + 2;
+  const pad = { t: 20, r: 20, b: 40, l: 60 };
+  const cw = W - pad.l - pad.r;
+  const ch = H - pad.t - pad.b;
+  
+  const x = (i) => pad.l + (i / (data.length - 1)) * cw;
+  const y = (w) => pad.t + ch - ((w - minW) / (maxW - minW)) * ch;
+  
+  // Grid lines
+  ctx.strokeStyle = "rgba(255,255,255,0.06)";
+  ctx.lineWidth = 1;
+  for (let w = Math.ceil(minW); w <= maxW; w += 5) {
+    ctx.beginPath(); ctx.moveTo(pad.l, y(w)); ctx.lineTo(W - pad.r, y(w)); ctx.stroke();
+    ctx.fillStyle = "rgba(255,255,255,0.25)";
+    ctx.font = "20px 'JetBrains Mono'";
+    ctx.textAlign = "right";
+    ctx.fillText(w, pad.l - 10, y(w) + 6);
+  }
+  
+  // Target line at 190
+  ctx.strokeStyle = "rgba(27,122,61,0.4)";
+  ctx.setLineDash([8, 6]);
+  ctx.beginPath(); ctx.moveTo(pad.l, y(190)); ctx.lineTo(W - pad.r, y(190)); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = "rgba(27,122,61,0.6)";
+  ctx.font = "18px 'Outfit'";
+  ctx.textAlign = "left";
+  ctx.fillText("190 TARGET", pad.l + 4, y(190) - 8);
+  
+  // Area fill
+  const hex = phaseHex(todayStr());
+  ctx.beginPath();
+  ctx.moveTo(x(0), y(data[0].weight));
+  data.forEach((d, i) => ctx.lineTo(x(i), y(d.weight)));
+  ctx.lineTo(x(data.length - 1), H - pad.b);
+  ctx.lineTo(x(0), H - pad.b);
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0, pad.t, 0, H - pad.b);
+  grad.addColorStop(0, hex + "40");
+  grad.addColorStop(1, hex + "00");
+  ctx.fillStyle = grad;
+  ctx.fill();
+  
+  // Line
+  ctx.strokeStyle = hex;
+  ctx.lineWidth = 3;
+  ctx.lineJoin = "round";
+  ctx.beginPath();
+  data.forEach((d, i) => { i === 0 ? ctx.moveTo(x(i), y(d.weight)) : ctx.lineTo(x(i), y(d.weight)); });
+  ctx.stroke();
+  
+  // Dots
+  data.forEach((d, i) => {
+    ctx.beginPath(); ctx.arc(x(i), y(d.weight), 5, 0, Math.PI * 2);
+    ctx.fillStyle = hex; ctx.fill();
+    ctx.strokeStyle = "#0D0D0F"; ctx.lineWidth = 2; ctx.stroke();
+  });
+  
+  // X labels
+  ctx.fillStyle = "rgba(255,255,255,0.25)";
+  ctx.font = "18px 'JetBrains Mono'";
+  ctx.textAlign = "center";
+  const step = Math.max(1, Math.floor(data.length / 6));
+  data.forEach((d, i) => { if (i % step === 0 || i === data.length - 1) ctx.fillText(d.date.slice(5), x(i), H - pad.b + 25); });
+}
+
+function drawComplianceChart(canvasId) {
+  const data = getComplianceData();
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width = canvas.offsetWidth * 2;
+  const H = canvas.height = 220;
+  ctx.clearRect(0, 0, W, H);
+  
+  const pad = { t: 10, r: 20, b: 35, l: 30 };
+  const cw = W - pad.l - pad.r;
+  const ch = H - pad.t - pad.b;
+  const barW = cw / data.length * 0.6;
+  const gap = cw / data.length;
+  const hex = phaseHex(todayStr());
+  
+  data.forEach((d, i) => {
+    const bx = pad.l + i * gap + (gap - barW) / 2;
+    const bh = (d.score / 6) * ch;
+    const by = pad.t + ch - bh;
+    
+    ctx.fillStyle = hex;
+    // Rounded top
+    const r = Math.min(6, barW / 2);
+    ctx.beginPath();
+    ctx.moveTo(bx + r, by);
+    ctx.arcTo(bx + barW, by, bx + barW, by + bh, r);
+    ctx.arcTo(bx + barW, by + bh, bx, by + bh, 0);
+    ctx.arcTo(bx, by + bh, bx, by, 0);
+    ctx.arcTo(bx, by, bx + barW, by, r);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Score label
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 20px 'JetBrains Mono'";
+    ctx.textAlign = "center";
+    if (d.score > 0) ctx.fillText(d.score, bx + barW / 2, by - 8);
+    
+    // Day label
+    ctx.fillStyle = "rgba(255,255,255,0.25)";
+    ctx.font = "18px 'JetBrains Mono'";
+    ctx.fillText(d.date, bx + barW / 2, H - pad.b + 22);
+  });
+}
+
+// ══════════════════════════════════════════
+// TAB SWITCHING
+// ══════════════════════════════════════════
+let currentTab = "dashboard";
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.getElementById("page-" + tab).classList.add("active");
+  document.querySelectorAll(".nav-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
+  render();
+}
+
+// ══════════════════════════════════════════
+// RENDER FUNCTIONS
+// ══════════════════════════════════════════
+function render() {
+  switch(currentTab) {
+    case "dashboard": renderDashboard(); break;
+    case "daily": renderDaily(); break;
+    case "weekly": renderWeekly(); break;
+    case "books": renderBooks(); break;
+    case "milestones": renderMilestones(); break;
+  }
+}
+
+function renderDashboard() {
+  const el = document.getElementById("page-dashboard");
+  const td = todayStr();
+  const dn = Math.max(1, dayNum(td));
+  const wk = weekNum(td);
+  const phase = phaseName(td);
+  const pc = phaseColor(td);
+  const streak = getStreak();
+  const lw = getLatestWeight();
+  const wl = 221 - lw;
+  const wts = getWorkoutsThisWeek();
+  const br = getBooksRead();
+  const pct = Math.round((dn / 180) * 100);
+  const nm = getNextMilestone();
+  const wkLog = DATA.weeklyLogs[String(wk)] || {};
+  const hasWeightData = getWeightData().length >= 2;
+  
+  el.innerHTML = `
+    <div class="section-head">
+      <p class="section-phase" style="color:${pc}">${phase}</p>
+      <p class="section-title">Day ${dn} of 180</p>
+      <p class="section-meta">Week ${wk} · ${fmtDateLong(td)}</p>
+    </div>
+    
+    <div style="padding:16px 20px 0">
+      <span class="streak" style="background:${streak >= 7 ? 'rgba(232,93,4,0.15)' : 'rgba(255,255,255,0.05)'};border:1px solid ${streak >= 7 ? 'rgba(232,93,4,0.3)' : 'rgba(255,255,255,0.08)'};color:${streak >= 7 ? '#E85D04' : 'rgba(255,255,255,0.5)'}">
+        🔥 ${streak} day streak
+      </span>
+    </div>
+    
+    <div class="stat-row">
+      <div class="stat"><div class="stat-glow" style="background:${pc}"></div>
+        <div class="stat-val">${lw}</div><div class="stat-label">Current lbs</div></div>
+      <div class="stat"><div class="stat-glow" style="background:var(--p1)"></div>
+        <div class="stat-val">${wl > 0 ? '-' + wl.toFixed(1) : '0'}</div><div class="stat-label">lbs lost</div></div>
+      <div class="stat"><div class="stat-glow" style="background:var(--p2)"></div>
+        <div class="stat-val">${wts}/6</div><div class="stat-label">This week</div></div>
+    </div>
+    
+    <div class="stat-row">
+      <div class="stat"><div class="stat-glow" style="background:var(--p3)"></div>
+        <div class="stat-val">${br}/12</div><div class="stat-label">Books done</div></div>
+      <div class="stat"><div class="stat-glow" style="background:var(--gold)"></div>
+        <div class="stat-val">${pct}%</div><div class="stat-label">Complete</div></div>
+      <div class="stat"><div class="stat-glow" style="background:${pc}"></div>
+        <div class="stat-val">${wkLog.leads || '—'}</div><div class="stat-label">Leads/wk</div></div>
+    </div>
+    
+    <div class="milestone-card" style="background:linear-gradient(135deg, ${phaseHex(td)}15, ${phaseHex(td)}08);border:1px solid ${phaseHex(td)}30">
+      <p class="milestone-label" style="color:${pc}">Next Milestone</p>
+      <p class="milestone-name">${nm.label} — ${nm.date.slice(5)}</p>
+      <p class="milestone-desc">${nm.desc}</p>
+    </div>
+    
+    ${hasWeightData ? `
+    <div class="card">
+      <p class="card-title">Weight Trend</p>
+      <canvas id="wChart" style="width:100%;height:150px;"></canvas>
+    </div>` : `
+    <div class="card">
+      <p class="card-title">Weight Trend</p>
+      <p style="font-size:13px;color:var(--text3);text-align:center;padding:30px 0">Log at least 2 weigh-ins to see your chart</p>
+    </div>`}
+    
+    <div class="card">
+      <p class="card-title">Non-Negotiable Score (Last 7 Days)</p>
+      <canvas id="cChart" style="width:100%;height:110px;"></canvas>
+    </div>
+  `;
+  
+  setTimeout(() => {
+    if (hasWeightData) drawWeightChart("wChart");
+    drawComplianceChart("cChart");
+  }, 50);
+}
+
+function renderDaily() {
+  const el = document.getElementById("page-daily");
+  const log = DATA.dailyLogs[selectedDate] || {};
+  
+  let togglesHtml = NONNEG.map(nn => `
+    <div class="check-row">
+      <div><div class="check-label">${nn.label}</div><div class="check-sub">${nn.sub}</div></div>
+      <button class="toggle ${log[nn.key] ? 'on' : ''}" onclick="toggleNN('${nn.key}')"><div class="toggle-dot"></div></button>
+    </div>
+  `).join("");
+  
+  el.innerHTML = `
+    <div class="date-nav">
+      <button class="date-btn" onclick="navDate(-1)">← Prev</button>
+      <span class="date-label">${fmtDate(selectedDate)}</span>
+      <button class="date-btn" onclick="navDate(1)">Next →</button>
+    </div>
+    
+    <div class="card">
+      <p class="card-title">Morning Weigh-In</p>
+      <div style="display:flex;align-items:center;gap:12px">
+        <input type="number" step="0.1" placeholder="221.0" value="${log.weight || ''}" 
+          onchange="setDaily('weight', parseFloat(this.value) || '')"
+          class="input-sm" style="width:100px;font-size:22px">
+        <span style="font-size:14px;color:var(--text2)">lbs</span>
+      </div>
+    </div>
+    
+    <div class="card">
+      <p class="card-title">Non-Negotiables</p>
+      ${togglesHtml}
+    </div>
+    
+    <div class="card">
+      <p class="card-title">Workout Notes</p>
+      <textarea class="input" placeholder="Bench 185x8, felt strong..." onchange="setDaily('workoutNotes', this.value)">${log.workoutNotes || ''}</textarea>
+    </div>
+    
+    <div class="card">
+      <p class="card-title">Nutrition</p>
+      <div class="macro-row">
+        ${[{k:'calories',l:'Cals',p:'2200'},{k:'proteinG',l:'Protein',p:'200'},{k:'carbsG',l:'Carbs',p:'180'},{k:'fatG',l:'Fat',p:'70'}].map(m => `
+          <div class="macro-col">
+            <div class="macro-label">${m.l}</div>
+            <input type="number" placeholder="${m.p}" value="${log[m.k] || ''}" 
+              onchange="setDaily('${m.k}', parseInt(this.value) || '')" class="input-sm">
+          </div>
+        `).join("")}
+      </div>
+    </div>
+    
+    <div class="card">
+      <p class="card-title">Reading</p>
+      <div class="check-row">
+        <div><div class="check-label">Read 30 min today</div><div class="check-sub">10 min AM + 20 min PM</div></div>
+        <button class="toggle ${log.readToday ? 'on' : ''}" onclick="toggleNN('readToday')"><div class="toggle-dot"></div></button>
+      </div>
+      <input class="input" placeholder="Key insight from today's reading..." 
+        value="${log.readingInsight || ''}" onchange="setDaily('readingInsight', this.value)" style="margin-top:10px">
+    </div>
+    
+    <div class="card">
+      <p class="card-title">Evening Reflection</p>
+      <input class="input" placeholder="3 things I'm grateful for..." 
+        value="${log.gratitude || ''}" onchange="setDaily('gratitude', this.value)" style="margin-bottom:8px">
+      <input class="input" placeholder="Biggest win today..." 
+        value="${log.biggestWin || ''}" onchange="setDaily('biggestWin', this.value)">
+    </div>
+  `;
+}
+
+function renderWeekly() {
+  const el = document.getElementById("page-weekly");
+  const wk = weekNum(selectedDate);
+  const wl = DATA.weeklyLogs[String(wk)] || {};
+  const pc = phaseColor(selectedDate);
+  
+  el.innerHTML = `
+    <div class="section-head">
+      <p class="section-phase" style="color:${pc}">Weekly Review</p>
+      <p class="section-title">Week ${wk}</p>
+    </div>
+    
+    <div class="card">
+      <p class="card-title">Body</p>
+      ${[{k:'waist',l:'Waist (inches)',p:'36'},{k:'bodyFeel',l:'How body feels (1–10)',p:'7'},{k:'sleepAvg',l:'Avg sleep (hrs)',p:'7.5'}].map(m => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0">
+          <span style="font-size:14px">${m.l}</span>
+          <input type="number" step="0.1" placeholder="${m.p}" value="${wl[m.k] || ''}" 
+            onchange="setWeekly('${m.k}', parseFloat(this.value) || '')" class="input-sm">
+        </div>
+      `).join("")}
+      <textarea class="input" placeholder="What went well with body this week?" 
+        onchange="setWeekly('bodyWell', this.value)" style="margin-top:8px">${wl.bodyWell || ''}</textarea>
+      <textarea class="input" placeholder="What needs to improve?" 
+        onchange="setWeekly('bodyFix', this.value)" style="margin-top:8px">${wl.bodyFix || ''}</textarea>
+    </div>
+    
+    <div class="card">
+      <p class="card-title">Business</p>
+      ${[{k:'leads',l:'New leads this week',p:'0'},{k:'estimates',l:'Estimates given',p:'0'},{k:'jobsClosed',l:'Jobs closed',p:'0'},{k:'revenue',l:'Revenue booked ($)',p:'0'},{k:'reviews',l:'Google reviews added',p:'0'}].map(m => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0">
+          <span style="font-size:14px">${m.l}</span>
+          <input type="number" placeholder="${m.p}" value="${wl[m.k] || ''}" 
+            onchange="setWeekly('${m.k}', parseInt(this.value) || '')" class="input-sm">
+        </div>
+      `).join("")}
+      <textarea class="input" placeholder="Biggest business win this week..." 
+        onchange="setWeekly('bizWin', this.value)" style="margin-top:8px">${wl.bizWin || ''}</textarea>
+      <textarea class="input" placeholder="Biggest problem to solve next week..." 
+        onchange="setWeekly('bizFix', this.value)" style="margin-top:8px">${wl.bizFix || ''}</textarea>
+    </div>
+    
+    <div class="card">
+      <p class="card-title">Mind</p>
+      <textarea class="input" placeholder="Key insight from this week's reading..." 
+        onchange="setWeekly('insight', this.value)">${wl.insight || ''}</textarea>
+      <textarea class="input" placeholder="What am I grateful for this week?" 
+        onchange="setWeekly('grateful', this.value)" style="margin-top:8px">${wl.grateful || ''}</textarea>
+      <div class="check-row" style="border:none;margin-top:4px">
+        <div class="check-label">Living the Non-Negotiables?</div>
+        <button class="toggle ${wl.livingNN ? 'on' : ''}" onclick="setWeekly('livingNN', ${!wl.livingNN});render()"><div class="toggle-dot"></div></button>
+      </div>
+    </div>
+  `;
+}
+
+function renderBooks() {
+  const el = document.getElementById("page-books");
+  const br = getBooksRead();
+  const pc = phaseColor(todayStr());
+  
+  const phases = [
+    { n: 1, name: "IGNITION" },
+    { n: 2, name: "ACCELERATION" },
+    { n: 3, name: "DOMINATION" },
+  ];
+  
+  let html = `
+    <div class="section-head">
+      <p class="section-phase" style="color:${pc}">Reading Progress</p>
+      <p class="section-title">${br} of 12 Books</p>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" style="width:${(br/12)*100}%;background:linear-gradient(90deg,var(--p1),var(--p2),var(--p3))"></div>
+    </div>
+  `;
+  
+  phases.forEach(p => {
+    const books = BOOKS.filter(b => b.phase === p.n);
+    html += `<div class="card"><p class="card-title">Phase ${p.n}: ${p.name}</p>`;
+    books.forEach((b, i) => {
+      const idx = BOOKS.indexOf(b);
+      const done = !!DATA.books[idx];
+      html += `
+        <div class="book-card ${done ? 'done' : ''}" onclick="toggleBook(${idx})">
+          <div style="flex:1"><div class="book-title">${b.title}</div><div class="book-author">${b.author}</div></div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="book-week">W${b.weeks}</span>
+            <div class="book-check">${done ? '✓' : ''}</div>
+          </div>
+        </div>`;
+    });
+    html += `</div>`;
+  });
+  
+  el.innerHTML = html;
+}
+
+function renderMilestones() {
+  const el = document.getElementById("page-milestones");
+  const td = todayStr();
+  const nm = getNextMilestone();
+  const pc = phaseColor(td);
+  
+  let html = `
+    <div class="section-head">
+      <p class="section-phase" style="color:${pc}">Milestone Timeline</p>
+      <p class="section-title">Your Checkpoints</p>
+    </div>
+    <div style="padding:16px 20px">
+  `;
+  
+  MILESTONES.forEach((m, i) => {
+    const isPast = m.date < td;
+    const isNext = m.date === nm.date && !isPast;
+    const dotClass = isPast ? "past" : isNext ? "next" : "future";
+    const barClass = isPast ? "past" : "future";
+    const nameClass = isNext ? "next" : isPast ? "past" : "";
+    const opacity = isPast ? "opacity:0.5" : "";
+    
+    html += `
+      <div class="tl-item">
+        <div class="tl-line">
+          <div class="tl-dot ${dotClass}"></div>
+          ${i < MILESTONES.length - 1 ? `<div class="tl-bar ${barClass}"></div>` : ''}
+        </div>
+        <div class="tl-content" style="${opacity}">
+          <div class="tl-date">${m.date.slice(5)}</div>
+          <div class="tl-name ${nameClass}">${m.label}${isPast ? ' ✓' : ''}</div>
+          <div class="tl-desc">${m.desc}</div>
+        </div>
+      </div>`;
+  });
+  
+  html += `</div>`;
+  el.innerHTML = html;
+}
+
+// ══════════════════════════════════════════
+// EVENT HANDLERS
+// ══════════════════════════════════════════
+function navDate(dir) {
+  const d = new Date(selectedDate);
+  d.setDate(d.getDate() + dir);
+  selectedDate = d.toISOString().split("T")[0];
+  render();
+}
+
+function setDaily(key, value) {
+  if (!DATA.dailyLogs[selectedDate]) DATA.dailyLogs[selectedDate] = {};
+  DATA.dailyLogs[selectedDate][key] = value;
+  DATA.dailyLogs[selectedDate].logged = true;
+  saveData();
+}
+
+function toggleNN(key) {
+  if (!DATA.dailyLogs[selectedDate]) DATA.dailyLogs[selectedDate] = {};
+  DATA.dailyLogs[selectedDate][key] = !DATA.dailyLogs[selectedDate][key];
+  DATA.dailyLogs[selectedDate].logged = true;
+  saveData();
+  render();
+}
+
+function setWeekly(key, value) {
+  const wk = String(weekNum(selectedDate));
+  if (!DATA.weeklyLogs[wk]) DATA.weeklyLogs[wk] = {};
+  DATA.weeklyLogs[wk][key] = value;
+  saveData();
+}
+
+function toggleBook(idx) {
+  if (!DATA.books) DATA.books = {};
+  DATA.books[idx] = !DATA.books[idx];
+  saveData();
+  render();
+}
+
+function resetAllData() {
+  if (confirm("This will delete ALL your transformation data. Are you sure?")) {
+    if (confirm("Really? This cannot be undone.")) {
+      localStorage.removeItem(STORE_KEY);
+      DATA = { dailyLogs: {}, weeklyLogs: {}, books: {} };
+      render();
+    }
+  }
+}
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+render();
+</script>
+</body>
+</html>
